@@ -32,3 +32,7 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+
+# package
+/Assets/gitignore/
+/Assets/Plugins/Zenject/
