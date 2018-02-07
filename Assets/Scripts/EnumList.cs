@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum BlockType {
+public enum Owner {
     NONE,
     PLAYER1,
     PLAYER2, // == COM

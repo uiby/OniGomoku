@@ -11,10 +11,17 @@ public class PlayerTapInput : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-		if (!DecideDestination())
-            return;
+		if (DecideDestination())
+            playerProvider.StartMove(GetTapPos());
 
-        playerProvider.StartMove(GetTapPos());
+        if (DecidePutting()) {
+            var block = StageCollision.GetBlockByRay(Input.mousePosition);
+            Debug.Log("block pos:"+block.position);
+            if (block.GetComponent<BlockProvider>().Decided())
+                return;
+            playerProvider.DecideBlock(block.GetComponent<BlockProvider>());
+        }
+
 	}
 
     bool DecideDestination() {
@@ -28,11 +35,17 @@ public class PlayerTapInput : MonoBehaviour {
 
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, layerMask)) {
             var pos = hit.point;
-            //Debug.Log("tap pos:"+pos);
+            Debug.Log("tap pos:"+pos);
             return pos;
         }
 
         //Debug.Log("no block");
         return Vector3.zero;
     }
+
+    bool DecidePutting() {
+        return Input.GetMouseButtonDown(1);
+    }
+
+
 }

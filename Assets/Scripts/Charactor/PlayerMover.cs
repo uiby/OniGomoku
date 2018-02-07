@@ -9,15 +9,14 @@ public class PlayerMover : MonoBehaviour {
     int checkCount = 0;
     bool run = false;
     Rigidbody rigidbody;
-    [Inject]
-    AStar aStar;
+    [Inject] AStar aStar;
 
     void Awake() {
         rigidbody = GetComponent<Rigidbody>();
     }
 
     void Start() {
-        aStar.Initialize(10);
+        aStar.Initialize(9);
     }
 
     void FixedUpdate() {

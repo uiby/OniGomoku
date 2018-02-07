@@ -19,11 +19,19 @@ public class BlockProvider : MonoBehaviour {
         blockMover.Move(idealPos, duration);
     }
 
-    public void DecideBlock(BlockType type) {
-        blockState.DecideBlock(type);
+    public void DecideOwner(Owner type) {
+        blockState.DecideOwner(type);
+    }
+
+    public Vector2 GetAddress() {
+        return blockState.address;
     }
 
     public bool Decided() {
-        return blockState.blockType != BlockType.NONE;
+        return blockState.owner != Owner.NONE;
+    }
+
+    public void Initialize(Vector2 address) {
+        blockState.Initialize(address);
     }
 }
