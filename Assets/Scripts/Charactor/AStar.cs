@@ -5,17 +5,17 @@ using UnityEngine;
 public class AStar : MonoBehaviour {
   int gridLevel;
   Mass[,] massArrays;
-  Vector2 goalPos = Vector2.zero; //正規化されたゴール位置
   Vector2 startPos = Vector2.zero; //正規化されたスタート位置
-  Vector2 realGoalPos = Vector2.zero; //タップされた位置
+  Vector2 goalPos = Vector2.zero; //正規化されたゴール位置
 
   //gridLevel = 格子数
   public void Initialize(int _gridLevel) {
     gridLevel = _gridLevel;
     massArrays = new Mass[gridLevel, gridLevel];
+    //MakeMassArrays(gridLevel, gridLevel);
   }
 
-  public void MakeMassArrays(int width, int height) {
+  void MakeMassArrays(int width, int height) {
     var xRange = (float)width/gridLevel;
     var yRange = (float)height/gridLevel;
     var yPos = yRange/2f;
@@ -40,61 +40,51 @@ public class AStar : MonoBehaviour {
     }
   }
 
-  public List<Vector2> MakePath(Vector2 tapPos) {
-    Reset();
-    var pos = transform.position;
-    MarkStartTile(new Vector2(pos.x, pos.z));
-    SearchGoalBlock(tapPos);
+  public List<Vector2> MakePath(Vector2 nowPos, Vector2 tapPos) {
+    MakeMassArrays(gridLevel, gridLevel);
+    MarkStartTile(nowPos);
+    MarkGoalTile(tapPos);
     DecideCostToGoal();
     ShowDebug(0);
-    Search();
+    if (startPos != goalPos)
+      Search();
+
     ShowDebug(1);
     ShowDebug(2);
     ShowPath();
 
-    return GetPath();
-  }
-
-  void Reset() {
-    for (int y = 0; y < gridLevel; y++) {
-      for (int x = 0; x < gridLevel; x++) {
-        if (!massArrays[y, x].isMass) continue;
-        massArrays[y, x].Reset();
-      }
-    }
+    return GetPath(tapPos);
   }
 
   void MarkStartTile(Vector2 charaPos) {
-    var pos = Vector2.zero;
-    var minDistance = 999999f;
-    for (int y = 0; y < gridLevel; y++) {
-      for (int x = 0; x < gridLevel; x++) {
-        if (!massArrays[y, x].isMass) continue;
-        var distance = (charaPos - massArrays[y, x].ToVector2()).sqrMagnitude;
-        if (distance < minDistance) {
-          minDistance = distance;
-          pos.Set(x, y);
-        }
-      }
-    }
+    var pos = GetNormalizedPos(charaPos);
 
     massArrays[(int)pos.y, (int)pos.x].SetMassType(MassType.START);
     startPos.Set(pos.x, pos.y);
   }
 
-  void SearchGoalBlock(Vector2 tapPos) {
+  void MarkGoalTile(Vector2 destination) {
+    var pos = GetNormalizedPos(destination);
+
+    massArrays[(int)pos.y, (int)pos.x].SetMassType(MassType.GOAL);
+    goalPos.Set(pos.x, pos.y);
+  }
+
+  Vector2 GetNormalizedPos(Vector2 pos) {
+    var normalizedPos = Vector2.zero;
+    var minDistance = 999999f;
     for (int y = 0; y < gridLevel; y++) {
       for (int x = 0; x < gridLevel; x++) {
         if (!massArrays[y, x].isMass) continue;
-        if ((massArrays[y, x].pos.x - massArrays[y, x].width/2f < tapPos.x && tapPos.x < massArrays[y, x].pos.x + massArrays[y, x].width/2f) && 
-            (massArrays[y, x].pos.y - massArrays[y, x].height/2f < tapPos.y && tapPos.y < massArrays[y, x].pos.y + massArrays[y, x].height/2f)) {
-          massArrays[y, x].SetMassType(MassType.GOAL);
-          goalPos.Set(x, y);
-          realGoalPos = tapPos;
-          return; //finish
+        var distance = (pos - massArrays[y, x].ToVector2()).sqrMagnitude;
+        if (distance < minDistance) {
+          minDistance = distance;
+          normalizedPos.Set(x, y);
         }
       }
     }
+
+    return normalizedPos;
   }
 
   void DecideCostToGoal() {
@@ -104,6 +94,7 @@ public class AStar : MonoBehaviour {
         if (massArrays[y, x].massType != MassType.CHECK_POINT) continue;        
         var cost = Mathf.RoundToInt((goalPos - new Vector2(x, y)).magnitude);
         massArrays[y, x].Initialize(cost);
+        //Debug.Log(massArrays[y, x].pos+" : "+massArrays[y, x].costToGoal);
       }
     }
   }
@@ -159,11 +150,13 @@ public class AStar : MonoBehaviour {
     massArrays[(int)goalPos.y, (int)goalPos.x].Search(massArrays[y, x].address);
   }
 
-  List<Vector2> GetPath() {
+  List<Vector2> GetPath(Vector2 tapPos) {
     List<Vector2> checkPointList = new List<Vector2>();
     var pos = goalPos;
     var counter = 0;
-    checkPointList.Add(realGoalPos);
+    checkPointList.Add(tapPos);
+    if (startPos == goalPos) 
+      return checkPointList;
     //checkPointList.Add(massArrays[(int)pos.y, (int)pos.x].pos); //ゴール地点
     while (massArrays[(int)pos.y, (int)pos.x].massType != MassType.START) {
       checkPointList.Add(massArrays[(int)pos.y, (int)pos.x].ToVector2());
@@ -202,6 +195,8 @@ public class AStar : MonoBehaviour {
 
     var pos = goalPos;
     var counter = 0;
+    if (startPos == goalPos)
+      return;
     while (massArrays[(int)pos.y, (int)pos.x].massType != MassType.START) {
       str += massArrays[(int)pos.y, (int)pos.x].address +" -> ";
       pos = massArrays[(int)pos.y, (int)pos.x].parnentPos;
@@ -265,20 +260,17 @@ public class Mass {
     width = _width;
     height = _height;
     address = _address;
-  }
-
-  public Mass() {
-    isMass = false;
-  }
-
-  public void Reset() {
     SetMassType(MassType.CHECK_POINT);
     costToGoal = 0;
     costFromStart = 0;
     totalCost = 0;
     searched = false;
     discovered = false;
-    parnentPos = Vector2.zero;
+    parnentPos = Vector2.one * -999;
+  }
+
+  public Mass() {
+    isMass = false;
   }
 
   public void Initialize(int initCostToGoal) {

@@ -3,16 +3,21 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerTapInput : MonoBehaviour {
-	
+    PlayerProvider playerProvider;
+
+    void Awake() {
+        playerProvider = GetComponent<PlayerProvider>();
+    }
+
 	// Update is called once per frame
 	void Update () {
-		if (!IsTap())
+		if (!DecideDestination())
             return;
 
-        GetTapPos();
+        playerProvider.StartMove(GetTapPos());
 	}
 
-    bool IsTap() {
+    bool DecideDestination() {
         return Input.GetMouseButtonDown(0);
     }
 
@@ -23,11 +28,11 @@ public class PlayerTapInput : MonoBehaviour {
 
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, layerMask)) {
             var pos = hit.point;
-            Debug.Log("tap pos:"+pos);
+            //Debug.Log("tap pos:"+pos);
             return pos;
         }
 
-        Debug.Log("no block");
+        //Debug.Log("no block");
         return Vector3.zero;
     }
 }
