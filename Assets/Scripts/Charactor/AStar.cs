@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class AStar : MonoBehaviour {
   int gridLevel;
@@ -45,15 +46,19 @@ public class AStar : MonoBehaviour {
     MarkStartTile(nowPos);
     MarkGoalTile(tapPos);
     DecideCostToGoal();
-    ShowDebug(0);
+    //ShowDebug(0);
     if (startPos != goalPos)
       Search();
 
-    ShowDebug(1);
-    ShowDebug(2);
-    ShowPath();
+    //ShowDebug(1);
+    //ShowDebug(2);
 
-    return GetPath(tapPos);
+    var path = GetPath(nowPos, tapPos);
+    ShowPath(path);
+    var optimizedPath = Optimize(path);
+    ShowPath(optimizedPath);
+
+    return optimizedPath;
   }
 
   void MarkStartTile(Vector2 charaPos) {
@@ -150,7 +155,7 @@ public class AStar : MonoBehaviour {
     massArrays[(int)goalPos.y, (int)goalPos.x].Search(massArrays[y, x].address);
   }
 
-  List<Vector2> GetPath(Vector2 tapPos) {
+  List<Vector2> GetPath(Vector2 nowPos, Vector2 tapPos) {
     List<Vector2> checkPointList = new List<Vector2>();
     var pos = goalPos;
     var counter = 0;
@@ -164,6 +169,8 @@ public class AStar : MonoBehaviour {
       if (counter++ > 10000)
         break;
     }
+
+    checkPointList.Add(nowPos); //最後にスタートマスの代わりにスタート位置を追加
 
     checkPointList.Reverse();//スタート順にソート
 
@@ -191,7 +198,7 @@ public class AStar : MonoBehaviour {
   }
 
   void ShowPath() {
-    var str = "最短経路\n";
+    var str = "経路\n";
 
     var pos = goalPos;
     var counter = 0;
@@ -204,6 +211,12 @@ public class AStar : MonoBehaviour {
         break;
     }
 
+    Debug.Log(str);
+  }
+
+  void ShowPath(List<Vector2> path) {
+    var str = "経路\n";
+    path.ForEach(pos => str+= pos+" -> ");
     Debug.Log(str);
   }
 
@@ -237,6 +250,56 @@ public class AStar : MonoBehaviour {
     }
 
     return pos;
+  }
+
+  List<Vector2> Optimize(List<Vector2> nowPath) {
+    var optimizedPath = nowPath;
+    var start = 0;
+    var end = 1;
+    var counter = 0;
+    var finish = false;
+
+    if (nowPath.Count < 2) return nowPath;
+
+    //直線で進めるなら省略する
+    while(true) {
+      var startPos = new Vector3(optimizedPath[start].x, 1, optimizedPath[start].y);
+      var endPos = new Vector3(optimizedPath[end].x, 1, optimizedPath[end].y);
+      
+      while (!StageCollision.CanStraight(startPos, endPos)) {
+        end++;
+        if (end >= optimizedPath.Count) {//終了
+          finish = true;
+          break;
+        }
+        endPos.x = optimizedPath[end].x;
+        endPos.z = optimizedPath[end].y;
+        if (counter++ > 1000) {
+          Debug.LogError("error. don't finish optimize");
+          break;
+        }
+      }
+
+      Debug.Log("start:"+start+" end:"+end);
+      optimizedPath.RemoveRange(start + 1, end - start - 2);
+      start++;
+      end = start+1;
+
+      if (finish)
+        break;
+
+      if (start >= optimizedPath.Count)
+        break;
+
+      if (counter++ > 1000) {
+        Debug.LogError("error. don't finish optimize");
+        break;
+      }
+    }
+
+    optimizedPath.RemoveAt(0);
+    
+    return optimizedPath;
   }
 }
 

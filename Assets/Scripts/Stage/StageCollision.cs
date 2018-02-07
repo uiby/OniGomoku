@@ -6,7 +6,7 @@ public class StageCollision : MonoBehaviour {
     static int layerMask;
 
     void Awake() {
-        layerMask = LayerMask.GetMask("Block");        
+        layerMask = LayerMask.GetMask("Block");
     }
 
     public static bool HasBlock(Vector3 center, Vector3 scale) {
@@ -26,4 +26,15 @@ public class StageCollision : MonoBehaviour {
         }  
         return null;
     }
+
+    public static bool CanStraight(Vector3 basePos, Vector3 idealPos) {
+    var direction = (idealPos - basePos).normalized;
+    var distance = (idealPos - basePos).magnitude;
+    RaycastHit hit;
+
+    Debug.Log("distance:"+distance);
+    var result = Physics.Raycast (basePos, direction, out hit, distance, layerMask);
+    return result;
+  }
+
 }
