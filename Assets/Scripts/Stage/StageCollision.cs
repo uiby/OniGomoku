@@ -32,7 +32,7 @@ public class StageCollision : MonoBehaviour {
     var distance = (idealPos - basePos).magnitude;
     RaycastHit hit;
 
-    Debug.Log("distance:"+distance);
+    //Debug.Log("distance:"+distance);
     var result = Physics.Raycast (basePos, direction, out hit, distance, layerMask);
     return result;
   }

@@ -42,11 +42,11 @@ public class AStar : MonoBehaviour {
   }
 
   public List<Vector2> MakePath(Vector2 nowPos, Vector2 tapPos) {
-    MakeMassArrays(gridLevel, gridLevel);
+    MakeMassArrays(9, 9);
     MarkStartTile(nowPos);
     MarkGoalTile(tapPos);
     DecideCostToGoal();
-    //ShowDebug(0);
+    ShowDebug(0);
     if (startPos != goalPos)
       Search();
 
@@ -112,32 +112,75 @@ public class AStar : MonoBehaviour {
     //massArrays[y, x].Search(startPos); //スタート地点を探索済みにする (親:スタート地点)
 
     while (true) {
+      var up = false;
+      var down = false;
+      var left = false;
+      var right = false;
       //周り(上下左右)のマスを発見する
       searchCost++;
       var pos = new Vector2(x, y+1);
       if (InField(pos) && massArrays[(int)pos.y, (int)pos.x].canSearch()) {
         massArrays[(int)pos.y, (int)pos.x].Discover(searchCost, new Vector2(x, y));
-      } else if (InField(pos) && massArrays[(int)pos.y, (int)pos.x].massType == MassType.GOAL) {
+        up = true; //通れる
+      } else if (HasGoalTile(pos)) {
         break;
       }
       pos = new Vector2(x, y-1);
       if (InField(pos) && massArrays[(int)pos.y, (int)pos.x].canSearch()) {
         massArrays[(int)pos.y, (int)pos.x].Discover(searchCost, new Vector2(x, y));
-      } else if (InField(pos) && massArrays[(int)pos.y, (int)pos.x].massType == MassType.GOAL) {
+        down = true; //通れる
+      } else if (HasGoalTile(pos)) {
         break;
       }
       pos = new Vector2(x-1, y);
       if (InField(pos) && massArrays[(int)pos.y, (int)pos.x].canSearch()) {
         massArrays[(int)pos.y, (int)pos.x].Discover(searchCost, new Vector2(x, y));
-      } else if (InField(pos) && massArrays[(int)pos.y, (int)pos.x].massType == MassType.GOAL) {
+        left = true; //通れる
+      } else if (HasGoalTile(pos)) {
         break;
       }
       pos = new Vector2(x+1, y);
       if (InField(pos) && massArrays[(int)pos.y, (int)pos.x].canSearch()) {
         massArrays[(int)pos.y, (int)pos.x].Discover(searchCost, new Vector2(x, y));
-      } else if (InField(pos) && massArrays[(int)pos.y, (int)pos.x].massType == MassType.GOAL) {
+        right = true; //通れる
+      } else if (HasGoalTile(pos)) {
         break;
       }
+
+      //optimaize 斜めのマスを発見する
+      pos = new Vector2(x-1, y+1);//左上
+      if (left && up && InField(pos)) { 
+        if (massArrays[(int)pos.y, (int)pos.x].canSearch()) {
+          massArrays[(int)pos.y, (int)pos.x].Discover(searchCost, new Vector2(x, y));
+        } else if (HasGoalTile(pos)) {
+          break;
+        }
+      }
+      pos = new Vector2(x+1, y+1);//右上
+      if (right && up && InField(pos)) { 
+        if (massArrays[(int)pos.y, (int)pos.x].canSearch()) {
+          massArrays[(int)pos.y, (int)pos.x].Discover(searchCost, new Vector2(x, y));
+        } else if (HasGoalTile(pos)) {
+          break;
+        }
+      }
+      pos = new Vector2(x-1, y-1);//左下
+      if (left && down && InField(pos)) { 
+        if (massArrays[(int)pos.y, (int)pos.x].canSearch()) {
+          massArrays[(int)pos.y, (int)pos.x].Discover(searchCost, new Vector2(x, y));
+        } else if (HasGoalTile(pos)) {
+          break;
+        }
+      }
+      pos = new Vector2(x+1, y-1);//右下
+      if (right && down && InField(pos)) { 
+        if (massArrays[(int)pos.y, (int)pos.x].canSearch()) {
+          massArrays[(int)pos.y, (int)pos.x].Discover(searchCost, new Vector2(x, y));
+        } else if (HasGoalTile(pos)) {
+          break;
+        }
+      }
+      //optimaize
 
       if (searchCost > 10000) {
         Debug.Log("error: don't finish search");
@@ -153,6 +196,10 @@ public class AStar : MonoBehaviour {
     }
 
     massArrays[(int)goalPos.y, (int)goalPos.x].Search(massArrays[y, x].address);
+  }
+
+  bool HasGoalTile(Vector2 address) {
+    return InField(address) && massArrays[(int)address.y, (int)address.x].massType == MassType.GOAL;
   }
 
   List<Vector2> GetPath(Vector2 nowPos, Vector2 tapPos) {
@@ -298,7 +345,7 @@ public class AStar : MonoBehaviour {
     }
 
     optimizedPath.RemoveAt(0);
-    
+
     return optimizedPath;
   }
 }
