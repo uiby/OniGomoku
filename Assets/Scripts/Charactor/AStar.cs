@@ -1,29 +1,36 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-/*
+
 public class AStar : MonoBehaviour {
-  int massCount;
+  int gridLevel;
   Mass[,] massArrays;
   Vector2 goalPos = Vector2.zero; //正規化されたゴール位置
   Vector2 startPos = Vector2.zero; //正規化されたスタート位置
+  Vector2 realGoalPos = Vector2.zero; //タップされた位置
 
-  public void Initialize(int _massCount) {
-    massCount = _massCount;
-    massArrays = new Mass[massCount, massCount];
+  //gridLevel = 格子数
+  public void Initialize(int _gridLevel) {
+    gridLevel = _gridLevel;
+    massArrays = new Mass[gridLevel, gridLevel];
   }
 
   public void MakeMassArrays(int width, int height) {
-    var xRange = (float)width/massCount;
-    var yRange = (float)height/massCount;
+    var xRange = (float)width/gridLevel;
+    var yRange = (float)height/gridLevel;
     var yPos = yRange/2f;
     var xPos = xRange/2f;
-    for (int y = 0; y < massCount; y++) {
+    for (int y = 0; y < gridLevel; y++) {
       xPos = xRange/2f;
-      for (int x = 0; x < massCount; x++) {
+      for (int x = 0; x < gridLevel; x++) {
         var center = new Vector3(xPos - width/2f, 0, yPos - height/2f);
-        if (StageSystem.HasTile(center, new Vector3(xRange/2f, 0.5f, yRange/2f))) {
-          massArrays[y, x] = new Mass(center, xRange, yRange, new Vector2(x, y));
+        if (StageCollision.HasBlock(center, new Vector3(xRange/2f, 0.5f, yRange/2f))) {
+          var block = StageCollision.GetBlock(center);
+          if (block.GetComponent<BlockProvider>().Decided()) {
+            massArrays[y, x] = new Mass();
+          } else { //まだ決まってない場合==歩ける
+            massArrays[y, x] = new Mass(center, xRange, yRange, new Vector2(x, y));
+          }
         } else {
           massArrays[y, x] = new Mass();
         }
@@ -49,8 +56,8 @@ public class AStar : MonoBehaviour {
   }
 
   void Reset() {
-    for (int y = 0; y < massCount; y++) {
-      for (int x = 0; x < massCount; x++) {
+    for (int y = 0; y < gridLevel; y++) {
+      for (int x = 0; x < gridLevel; x++) {
         if (!massArrays[y, x].isMass) continue;
         massArrays[y, x].Reset();
       }
@@ -60,8 +67,8 @@ public class AStar : MonoBehaviour {
   void MarkStartTile(Vector2 charaPos) {
     var pos = Vector2.zero;
     var minDistance = 999999f;
-    for (int y = 0; y < massCount; y++) {
-      for (int x = 0; x < massCount; x++) {
+    for (int y = 0; y < gridLevel; y++) {
+      for (int x = 0; x < gridLevel; x++) {
         if (!massArrays[y, x].isMass) continue;
         var distance = (charaPos - massArrays[y, x].ToVector2()).sqrMagnitude;
         if (distance < minDistance) {
@@ -76,12 +83,14 @@ public class AStar : MonoBehaviour {
   }
 
   void SearchGoalBlock(Vector2 tapPos) {
-    for (int y = 0; y < massCount; y++) {
-      for (int x = 0; x < massCount; x++) {
+    for (int y = 0; y < gridLevel; y++) {
+      for (int x = 0; x < gridLevel; x++) {
         if (!massArrays[y, x].isMass) continue;
-        if (StageSystem.HasStar(massArrays[y, x].pos, new Vector3(massArrays[y, x].width*4/5f, 5, massArrays[y, x].height*4/5f))) {
+        if ((massArrays[y, x].pos.x - massArrays[y, x].width/2f < tapPos.x && tapPos.x < massArrays[y, x].pos.x + massArrays[y, x].width/2f) && 
+            (massArrays[y, x].pos.y - massArrays[y, x].height/2f < tapPos.y && tapPos.y < massArrays[y, x].pos.y + massArrays[y, x].height/2f)) {
           massArrays[y, x].SetMassType(MassType.GOAL);
-          goalPos = tapPos;
+          goalPos.Set(x, y);
+          realGoalPos = tapPos;
           return; //finish
         }
       }
@@ -89,8 +98,8 @@ public class AStar : MonoBehaviour {
   }
 
   void DecideCostToGoal() {
-    for (int y = 0; y < massCount; y++) {
-      for (int x = 0; x < massCount; x++) {
+    for (int y = 0; y < gridLevel; y++) {
+      for (int x = 0; x < gridLevel; x++) {
         if (!massArrays[y, x].isMass) continue;
         if (massArrays[y, x].massType != MassType.CHECK_POINT) continue;        
         var cost = Mathf.RoundToInt((goalPos - new Vector2(x, y)).magnitude);
@@ -154,8 +163,7 @@ public class AStar : MonoBehaviour {
     List<Vector2> checkPointList = new List<Vector2>();
     var pos = goalPos;
     var counter = 0;
-    var starPos = StageSystem.GetStar().transform.position;
-    checkPointList.Add(new Vector2(starPos.x, starPos.z));
+    checkPointList.Add(realGoalPos);
     //checkPointList.Add(massArrays[(int)pos.y, (int)pos.x].pos); //ゴール地点
     while (massArrays[(int)pos.y, (int)pos.x].massType != MassType.START) {
       checkPointList.Add(massArrays[(int)pos.y, (int)pos.x].ToVector2());
@@ -174,8 +182,8 @@ public class AStar : MonoBehaviour {
     if (type == 0) str += "推定コスト\n";
     else if (type == 1) str += "実コスト\n";
     else if (type == 2) str += "合計コスト\n";
-    for (int y = massCount - 1; y >= 0 ; y--) {
-      for (int x = 0; x < massCount; x++) {
+    for (int y = gridLevel - 1; y >= 0 ; y--) {
+      for (int x = 0; x < gridLevel; x++) {
         if (type == 0) 
           str += massArrays[y, x].costToGoal.ToString("00") +" ";
         else if (type == 1)
@@ -205,15 +213,15 @@ public class AStar : MonoBehaviour {
   }
 
   bool InField(Vector2 pos) {
-    return (0 <= (int)pos.x && (int)pos.x < massCount) && (0 <= (int)pos.y && (int)pos.y < massCount);
+    return (0 <= (int)pos.x && (int)pos.x < gridLevel) && (0 <= (int)pos.y && (int)pos.y < gridLevel);
   }
 
   Vector2 GetTileOfMinimumTotalCost() {
     var pos = Vector2.zero;
     var minTotalCost = 99999;
     var minHeuristicCost = 99999;
-    for (int y = 0; y < massCount; y++) {
-      for (int x = 0; x < massCount; x++) {
+    for (int y = 0; y < gridLevel; y++) {
+      for (int x = 0; x < gridLevel; x++) {
         if (!massArrays[y, x].isMass) continue;
         if (massArrays[y, x].searched) continue;
         if (!massArrays[y, x].discovered) continue;
@@ -315,4 +323,3 @@ public enum MassType {
   CHECK_POINT,
   GOAL,
 }
-*/
