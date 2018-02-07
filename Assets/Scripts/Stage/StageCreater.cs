@@ -27,18 +27,20 @@ public class StageCreater : MonoBehaviour {
         }*/
 
         int counter = 0;
+        var diff = (range - 1)/2f;
+        var opPos = (range - 1);
         while (counter < range) {
             var y = counter;
             for (int x = 0; x <= counter; x++) {
                 var block = (GameObject)Instantiate(blockPrefab, Vector3.zero, Quaternion.identity);
-                block.GetComponent<BlockProvider>().Move(new Vector3(x, -10, y), new Vector3(x, -1, y), popDuration);
+                block.GetComponent<BlockProvider>().Move(new Vector3(x - diff, -10, y - diff), new Vector3(x - diff, -1, y - diff), popDuration);
                 block.transform.SetParent(transform);
-                if (x == (range - 1) - y && y == (range - 1) - x) {
+                if (x == opPos - y && y == opPos - x) {
                     y--;
                     continue;
                 }
                 var block2 = (GameObject)Instantiate(blockPrefab, Vector3.zero, Quaternion.identity);
-                block2.GetComponent<BlockProvider>().Move(new Vector3((range - 1) - x, -10, (range - 1) - y), new Vector3((range - 1) - x, -1, (range - 1) - y), popDuration);
+                block2.GetComponent<BlockProvider>().Move(new Vector3(opPos - x - diff, -10, opPos - y - diff), new Vector3(opPos - x - diff, -1, opPos - y - diff), popDuration);
                 block2.transform.SetParent(transform);
                 y--;
             }
