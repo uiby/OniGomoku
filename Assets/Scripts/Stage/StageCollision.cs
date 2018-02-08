@@ -17,7 +17,15 @@ public class StageCollision : MonoBehaviour {
         return Physics.OverlapBox(center, new Vector3(0.1f, 2, 0.1f), Quaternion.identity, layerMask)[0].transform;
     }
 
-    public static Transform GetBlockByRay(Vector3 mousePos) {
+    public static Transform GetBlockByRay(Vector3 basePos, Vector3 direction) {
+        RaycastHit hit;
+        if (Physics.Raycast(basePos, direction, out hit, Mathf.Infinity, layerMask)){
+            return hit.transform;
+        }  
+        return null;
+    }
+
+    public static Transform GetBlockByRayFormCamera(Vector3 mousePos) {
         Ray ray = Camera.main.ScreenPointToRay(mousePos);
         RaycastHit hit;
 

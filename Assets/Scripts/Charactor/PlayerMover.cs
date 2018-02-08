@@ -9,14 +9,12 @@ public class PlayerMover : MonoBehaviour {
     int checkCount = 0;
     bool run = false;
     Rigidbody rigidbody;
-    [Inject] AStar aStar;
+    AStar aStar;
 
     void Awake() {
-        rigidbody = GetComponent<Rigidbody>();
-    }
-
-    void Start() {
+        aStar = (AStar)gameObject.AddComponent<AStar>();
         aStar.Initialize(9);
+        rigidbody = GetComponent<Rigidbody>();
     }
 
     void FixedUpdate() {
@@ -34,6 +32,11 @@ public class PlayerMover : MonoBehaviour {
         checkPointList = aStar.MakePath(new Vector2(transform.position.x, transform.position.z), new Vector2(destination.x, destination.z));
 
         run = true;
+    }
+
+    public void Stop() {
+        Reset(); //初期化
+        run = false;
     }
 
     void Reset() {

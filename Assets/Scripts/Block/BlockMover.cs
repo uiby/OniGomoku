@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class BlockMover : MonoBehaviour {
     [SerializeField] AnimationCurve moveCurve;
+    Rigidbody rigidbody;
+    void Awake() {
+        rigidbody = GetComponent<Rigidbody>();
+    }
     public void Move(Vector3 idealPos, float duration) {
         StartCoroutine(Movement(idealPos, duration));
     }
@@ -18,7 +22,7 @@ public class BlockMover : MonoBehaviour {
             rate = Mathf.Clamp01(timer/duration);
             var curveRate = moveCurve.Evaluate(rate);
 
-            transform.position = Vector3.Lerp(startPos, endPos, curveRate);
+            rigidbody.position = Vector3.Lerp(startPos, endPos, curveRate);
             yield return null;
         }
     }

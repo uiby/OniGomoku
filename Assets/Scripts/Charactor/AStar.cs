@@ -46,7 +46,7 @@ public class AStar : MonoBehaviour {
     MarkStartTile(nowPos);
     MarkGoalTile(tapPos);
     DecideCostToGoal();
-    ShowDebug(0);
+    //ShowDebug(0);
     if (startPos != goalPos)
       Search();
 
@@ -54,9 +54,9 @@ public class AStar : MonoBehaviour {
     //ShowDebug(2);
 
     var path = GetPath(nowPos, tapPos);
-    ShowPath(path);
+    //ShowPath(path);
     var optimizedPath = Optimize(path);
-    ShowPath(optimizedPath);
+    //ShowPath(optimizedPath);
 
     return optimizedPath;
   }
@@ -327,7 +327,9 @@ public class AStar : MonoBehaviour {
         }
       }
 
-      Debug.Log("start:"+start+" end:"+end);
+      //Debug.Log("start:"+start+" end:"+end);
+      if (start + 1 + (end - start - 2) >= optimizedPath.Count || (end - start - 2) < 0)
+        break;
       optimizedPath.RemoveRange(start + 1, end - start - 2);
       start++;
       end = start+1;

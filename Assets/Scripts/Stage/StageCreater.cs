@@ -10,9 +10,8 @@ public class StageCreater : MonoBehaviour {
 
 
 	// Use this for initialization
-	void Start () {
+	void Awake () {
         blockManager.Initialize(range);
-        StartCoroutine(CreateStage());
 	}
 	
     public IEnumerator CreateStage() {
